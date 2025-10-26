@@ -16,8 +16,8 @@ The project consists of:
 Before you can build and run this project, you need to have the following installed:
 
 * **Java Development Kit (JDK)**: We recommend using JDK 21. Ensure the `JAVA_HOME` environment variable is set to your JDK installation path.
-* **Swiftly**: You need to install [Swiftly](https://www.swift.org/install/)
-* **Swift SDK for Android**: You need to install the [Swift SDK for Android](https://swift.org/install)
+* **Swiftly**: You need to install [Swiftly]([https://www.swift.org/install/](https://www.swift.org/swiftly/documentation/swiftly/getting-started/))
+* **Swift SDK for Android**: You need to install the [Swift SDK for Android]([https://swift.org/install](https://www.swift.org/documentation/articles/swift-sdk-for-android-getting-started.html))
 
 ## Running the example
 
