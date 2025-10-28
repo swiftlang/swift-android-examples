@@ -2,12 +2,38 @@
 
 This repository contains example applications that demonstrate how to use the
 [Swift SDK for Android](https://swift.org/install). Each example showcases different
-integration patterns for Swift on Android. It is highly recommended that you use
-the automated swift-java interop that generates bindings for you; the others are
-merely provided as examples for those who want to dig deeper and see the raw JNI,
-or not use Java at all.
+integration patterns for Swift on Android.
 
-## Available Examples
+## Getting Started
+
+The **[hello-swift-java](hello-swift-java/)** example is the recommended
+approach for integrating Swift into Android applications. This example
+demonstrates how to build a Swift library that can be seamlessly called from
+Kotlin/Java code using [swift-java](https://github.com/swiftlang/swift-java),
+which automatically generates the necessary Java wrappers and JNI bindings for
+you.
+
+The example consists of two components:
+
+- **hashing-lib**: A Swift package that uses `swift-crypto` to provide SHA256
+  hashing functionality
+- **hashing-app**: A Kotlin Android app using Jetpack Compose UI that calls the
+  Swift library
+
+When you press the "Hash" button in the app, it calls directly from Kotlin into
+Swift code to compute a SHA256 hash—no manual JNI code required. The swift-java
+tooling handles all the bridging automatically, making it easy to expose Swift
+APIs to your Android application with type safety and minimal boilerplate.
+
+This approach is ideal for production applications where you want to write
+business logic, algorithms, or libraries in Swift while maintaining a standard
+Kotlin/Java Android frontend.
+
+## Other Examples
+
+For those who want to explore alternative integration patterns or understand
+lower level details of how Swift integrates with Android, there are a number of
+other examples provided.
 
 Examples using [swift-java](https://github.com/swiftlang/swift-java) to generate
 the necessary Swift/Java bridging:
