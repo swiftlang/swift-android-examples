@@ -48,7 +48,7 @@ Now restart the terminal so that the `sdk` utility is added to your path, and th
 
 ```bash
 sdk install java 25.0.1-amzn --use # only in order to publish swift-java artifacts locally
-export JAVA_HOME="${HOME}//.sdkman/candidates/java/current"
+export JAVA_HOME="${HOME}/.sdkman/candidates/java/current"
 ```
 
 Next, let's prepare and publish the swift-java support libraries:
