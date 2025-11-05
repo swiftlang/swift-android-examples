@@ -25,21 +25,15 @@ Swift code to compute a SHA256 hash—no manual JNI code required. The swift-jav
 tooling handles all the bridging automatically, making it easy to expose Swift
 APIs to your Android application with type safety and minimal boilerplate.
 
-This approach is ideal for production applications where you want to write
-business logic, algorithms, or libraries in Swift while maintaining a standard
-Kotlin/Java Android frontend.
+This approach is ideal for production Android applications where you want to write
+business logic, algorithms, or libraries in Swift, while maintaining a standard
+Kotlin/Java frontend.
 
 ## Other Examples
 
 For those who want to explore alternative integration patterns or understand
-lower level details of how Swift integrates with Android, there are a number of
-other examples provided.
-
-Examples using [swift-java](https://github.com/swiftlang/swift-java) to generate
-the necessary Swift/Java bridging:
-- **[hello-swift-java](hello-swift-java/)** - application that demonstrates how
-to call Swift code from an Android app with automatically generated Java wrappers
-and JNI code.
+lower-level details of how Swift integrates with Android, there are a number of
+more manual examples provided.
 
 An example of a purely native Swift app, which calls no Java APIs:
 - **[native-activity](native-activity/)** - complete native Android activity with
