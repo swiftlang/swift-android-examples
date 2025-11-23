@@ -29,6 +29,11 @@ project(":hello-swift-java-hashing-lib").projectDir = file("hello-swift-java/has
 include(":hello-swift-java-hashing-app")
 project(":hello-swift-java-hashing-app").projectDir = file("hello-swift-java/hashing-app")
 
+include(":swift-java-weather-app-weather-lib")
+project(":swift-java-weather-app-weather-lib").projectDir = file("swift-java-weather-app/weather-lib")
+include(":swift-java-weather-app-weather-app")
+project(":swift-java-weather-app-weather-app").projectDir = file("swift-java-weather-app/weather-app")
+
 // raw-jni examples
 include(":hello-swift-raw-jni")
 include(":hello-swift-raw-jni-callback")

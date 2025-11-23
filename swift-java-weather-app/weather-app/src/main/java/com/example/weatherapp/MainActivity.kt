@@ -10,7 +10,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-package com.example.hashingapp
+package com.example.weatherapp
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -33,16 +33,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.hashingapp.ui.theme.HashingAppTheme
-import com.example.swifthashing.SwiftHashing
-import com.example.weatherclient.WeaterClient;
+import com.example.weatherapp.ui.theme.WeatherAppTheme
+import com.example.weatherlib.WeatherClient
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            HashingAppTheme {
+            WeatherAppTheme {
                 Surface (
                     modifier = Modifier.fillMaxSize().padding(top = 64.dp),
                     color = MaterialTheme.colorScheme.background
@@ -78,8 +77,7 @@ fun HashScreen() {
                 contentColor = Color.White
             ),
             onClick = {
-                // This calls the Swift method `hash` from SwiftHashing.swift
-                hashResult.value = SwiftHashing.hash(input.value)
+
             }
         ) {
             Text("Hash")

@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace "com.example.hashinglib"
+    namespace "com.example.weatherlib"
     compileSdkVersion 34
 
     defaultConfig {
@@ -119,7 +119,7 @@ def buildSwiftAll = tasks.register("buildSwiftAll") {
 
     // If the package description changes, we should execute jextract again, maybe we added jextract to new targets
     inputs.file(new File(projectDir, "Package.swift"))
-    inputs.dir(new File(layout.projectDirectory.asFile, "Sources/SwiftHashing".toString()))
+    inputs.dir(new File(layout.projectDirectory.asFile, "Sources/WeatherLibrary".toString()))
 
     outputs.dir(layout.buildDirectory.dir("../.build/plugins/outputs/${layout.projectDirectory.asFile.getName().toLowerCase()}"))
 
