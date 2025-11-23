@@ -12,41 +12,53 @@
 
 package com.example.weatherapp
 
+import android.Manifest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.weatherapp.ui.theme.WeatherAppTheme
-import com.example.weatherlib.WeatherClient
+import com.example.weatherapp.viewmodel.WeatherViewModel
 
 class MainActivity : ComponentActivity() {
+
+    private val viewModel: WeatherViewModel by viewModels()
+
+    private val requestPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted: Boolean ->
+            if (isGranted) {
+                viewModel.fetchWeather()
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             WeatherAppTheme {
-                Surface (
+                Surface(
                     modifier = Modifier.fillMaxSize().padding(top = 64.dp),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    HashScreen()
+                    WeatherScreen(viewModel) {
+                        requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                    }
                 }
             }
         }
@@ -54,9 +66,9 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun HashScreen() {
-    val input = remember { mutableStateOf("") }
-    val hashResult = remember { mutableStateOf("") }
+fun WeatherScreen(viewModel: WeatherViewModel, onFetchWeatherClick: () -> Unit) {
+    val weatherData = viewModel.weatherData.collectAsState().value
+    val error = viewModel.error.collectAsState().value
 
     Column(
         modifier = Modifier
@@ -64,30 +76,18 @@ fun HashScreen() {
             .padding(32.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        TextField(
-            value = input.value,
-            onValueChange = { input.value = it },
-            label = { Text("Enter text to hash") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Button(
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFF05138),
-                contentColor = Color.White
-            ),
-            onClick = {
-
-            }
-        ) {
-            Text("Hash")
+        Button(onClick = onFetchWeatherClick) {
+            Text("Fetch Weather")
         }
 
-        if (hashResult.value.isNotEmpty()) {
-            Text(
-                text = hashResult.value,
-                style = MaterialTheme.typography.bodyMedium
-            )
+        weatherData?.let {
+            Text("Temperature: ${it.temperature}°C")
+            Text("Wind Speed: ${it.windSpeed} km/h")
+            Text("Wind Direction: ${it.windDirection}°")
+        }
+
+        error?.let {
+            Text("Error: $it", color = MaterialTheme.colorScheme.error)
         }
     }
 }

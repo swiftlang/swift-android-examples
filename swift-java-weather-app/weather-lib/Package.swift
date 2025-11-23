@@ -51,7 +51,7 @@ let package = Package(
     )
   ],
   dependencies: [
-    .package(url: "https://github.com/madsodgaard/swift-java", branch: "implement-protocols"),
+    .package(path: "/Users/mads/dev/swift-java"),
     .package(url: "https://github.com/apple/swift-openapi-generator", from: "1.6.0"),
     .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.7.0"),
     .package(url: "https://github.com/apple/swift-openapi-urlsession", from: "1.0.0"),
@@ -62,8 +62,8 @@ let package = Package(
         name: "WeatherLibrary",
         dependencies: [
             .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
-            .product(name: "OpenAPIURLSession", package: "swift-openapi-urlsession"),
-            .product(name: "OpenAPIAsyncHTTPClient", package: "swift-openapi-async-http-client"),
+            .product(name: "OpenAPIURLSession", package: "swift-openapi-urlsession", condition: .when(platforms: [.macOS, .iOS])),
+            .product(name: "OpenAPIAsyncHTTPClient", package: "swift-openapi-async-http-client", condition: .when(platforms: [.android])),
             .product(name: "SwiftJava", package: "swift-java"),
             .product(name: "CSwiftJavaJNI", package: "swift-java"),
             .product(name: "SwiftJavaRuntimeSupport", package: "swift-java"),

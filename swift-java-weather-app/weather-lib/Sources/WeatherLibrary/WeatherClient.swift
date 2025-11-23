@@ -31,7 +31,7 @@ public final class WeatherClient {
     }
 
     /// Fetches the current weather for a specific geographic location.
-    public func getWeather(latitude: Double, longitude: Double) async throws -> WeatherData {
+    public func getWeather() async throws -> WeatherData {
         let location = self.locationFetcher.currentLocation()
         let response = try await client.getV1Forecast(.init(query: .init(latitude: location.latitude, longitude: location.longitude, currentWeather: true)))
 
@@ -46,8 +46,8 @@ public final class WeatherClient {
                 // Map the generated schema type to our clean, public `WeatherData` type.
                 return WeatherData(
                     temperature: current.temperature,
-                    windSpeed: current.windSpeed,
-                    windDirection: current.windDirection
+                    windSpeed: current.windspeed,
+                    windDirection: current.winddirection
                 )
             }
 
