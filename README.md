@@ -29,6 +29,16 @@ This approach is ideal for production Android applications where you want to wri
 business logic, algorithms, or libraries in Swift, while maintaining a standard
 Kotlin/Java frontend.
 
+## C++ Integration Example
+
+The **[hello-cpp-swift](hello-cpp-swift/)** example demonstrates how to integrate
+C++ libraries into Android applications through Swift. This example packages a C++
+library as an artifactbundle, imports it as a Swift binary target, and exposes it
+to Android using swift-java for automatic JNI generation.
+
+This pattern is useful when you have existing C++ code and want to leverage Swift's
+type safety and swift-java's automatic bridging to create Android-compatible libraries.
+
 ## Other Examples
 
 For those who want to explore alternative integration patterns or understand
