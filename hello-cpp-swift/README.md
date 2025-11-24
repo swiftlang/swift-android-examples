@@ -16,9 +16,7 @@ The project is structured into three main parts:
 
 Before you can build and run this project, you need to have the following installed:
 
-* **Java Development Kit (JDK)**: We recommend using JDK 25. Ensure the `JAVA_HOME` environment variable is set to your JDK installation path.
-* **Swiftly**: You need to install [Swiftly](https://www.swift.org/swiftly/documentation/swiftly/getting-started/)
-* **Swift SDK for Android**: You need to install the [Swift SDK for Android](https://www.swift.org/documentation/articles/swift-sdk-for-android-getting-started.html)
+* **Basic setup**: Follow the Prerequisites and Setup instructions in [hello-swift-java/README.md](../hello-swift-java/README.md) to install JDK, Swiftly, Swift SDK for Android, and publish the swift-java packages locally.
 * **Android NDK**: Required to build the C++ library. Set the `ANDROID_NDK_HOME` environment variable to your NDK installation path.
 
 ## Setup and Configuration
@@ -33,31 +31,6 @@ cd hello-cpp-swift/cpp-lib
 ```
 
 This will create the `prebuilt/HelloWorldCpp.artifactbundle` directory containing the compiled C++ static libraries for all Android architectures (arm64-v8a, armeabi-v7a, x86_64).
-
-### 2. Publish `swift-java` packages locally
-
-As the `swift-java` project does not yet publish the necessary Java packages needed at runtime, we need to do it ourselves.
-
-> Note: This step will not be necessary once swift-java publishes releases.
-
-First, ensure you have JDK 25 installed and configured:
-
-```bash
-# Install sdkman if you don't have it
-curl -s "https://get.sdkman.io" | bash
-
-# Restart terminal, then install JDK 25
-sdk install java 25.0.1-amzn --use
-export JAVA_HOME="${HOME}/.sdkman/candidates/java/current"
-```
-
-Then publish the swift-java packages:
-
-```bash
-cd hello-cpp-swift/swift-lib/src/main/swift
-swift package resolve
-./.build/checkouts/swift-java/gradlew --project-dir .build/checkouts/swift-java :SwiftKitCore:publishToMavenLocal
-```
 
 ## Running the example
 
