@@ -1,0 +1,4 @@
+module HelloWorldCpp {
+    header "calculator.h"
+    export *
+}
