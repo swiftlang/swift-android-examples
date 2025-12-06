@@ -15,20 +15,19 @@ package com.example.weatherapp.viewmodel
 import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
-import com.example.weatherapp.data.WeatherData
 import com.example.weatherapp.services.LocationService
 import com.example.weatherlib.WeatherClient
+import com.example.weatherlib.WeatherData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import org.swift.swiftkit.core.SwiftArena
 
 class WeatherViewModel(application: Application) : AndroidViewModel(application) {
     private val arena = SwiftArena.ofAuto()
-
-    private val locationService = LocationService(application)
-    private val weatherClient = WeatherClient.init(locationService, arena)
 
     private val _weatherData = MutableStateFlow<WeatherData?>(null)
     val weatherData = _weatherData.asStateFlow()
@@ -39,14 +38,11 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
     fun fetchWeather() {
         viewModelScope.launch {
             try {
-                    var weather = weatherClient.getWeather(arena).get()
-                    _weatherData.value = WeatherData(
-                        temperature = weather.temperature,
-                        windSpeed = weather.windSpeed,
-                        windDirection = weather.windDirection
-                    )
+                val locationService = LocationService(application)
+                val weatherClient = WeatherClient.init(locationService, arena)
+                val weather = weatherClient.getWeather(arena).await()
+                _weatherData.value = weather
             } catch (e: Exception) {
-                Log.i("app", "crash?")
                 _error.value = "An unexpected error occurred: ${e.message}"
             }
         }

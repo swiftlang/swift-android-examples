@@ -48,20 +48,11 @@ let package = Package(
       name: "SwiftHashing",
       type: .dynamic,
       targets: ["SwiftHashing"]
-    ),
-    .library(
-      name: "WeatherClient",
-      type: .dynamic,
-      targets: ["WeatherClient"]
     )
   ],
   dependencies: [
-    .package(url: "https://github.com/madsodgaard/swift-java", branch: "implement-protocols"),
+    .package(url: "https://github.com/swiftlang/swift-java", branch: "main"),
     .package(url: "https://github.com/apple/swift-crypto.git", "1.0.0"..<"4.0.0"),
-    .package(url: "https://github.com/apple/swift-openapi-generator", from: "1.6.0"),
-    .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.7.0"),
-    .package(url: "https://github.com/apple/swift-openapi-urlsession", from: "1.0.0"),
-    .package(url: "https://github.com/swift-server/swift-openapi-async-http-client", from: "1.0.0"),
   ],
   targets: [
     .target(
@@ -79,25 +70,6 @@ let package = Package(
       plugins: [
         .plugin(name: "JExtractSwiftPlugin", package: "swift-java")
       ]
-    ),
-    .target(
-        name: "WeatherClient",
-        dependencies: [
-            .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
-            .product(name: "OpenAPIURLSession", package: "swift-openapi-urlsession"),
-            .product(name: "OpenAPIAsyncHTTPClient", package: "swift-openapi-async-http-client"),
-            .product(name: "SwiftJava", package: "swift-java"),
-            .product(name: "CSwiftJavaJNI", package: "swift-java"),
-            .product(name: "SwiftJavaRuntimeSupport", package: "swift-java"),
-        ],
-        swiftSettings: [
-          .swiftLanguageMode(.v5),
-          .unsafeFlags(["-I\(javaIncludePath)", "-I\(javaPlatformIncludePath)"], .when(platforms: [.macOS, .linux, .windows]))
-        ],
-        plugins: [
-            .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator"),
-            .plugin(name: "JExtractSwiftPlugin", package: "swift-java")
-        ]
     ),
     .testTarget(
       name: "SwiftHashingTests",

@@ -1,9 +1,14 @@
+//===----------------------------------------------------------------------===//
 //
-//  empty.swift
-//  SwiftHashing
+// This source file is part of the Swift.org open source project
 //
-//  Created by Mads on 23/11/2025.
+// Copyright (c) 2025 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
 //
+// See https://swift.org/LICENSE.txt for license information
+// See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+//
+//===----------------------------------------------------------------------===//
 
 #if os(Android)
 import OpenAPIAsyncHTTPClient
@@ -18,7 +23,6 @@ public final class WeatherClient {
     private let locationFetcher: any LocationFetcher
 
     public init(locationFetcher: any LocationFetcher) {
-        // Use the base URL for the Open-Meteo API.
         guard let serverURL = URL(string: "https://api.open-meteo.com") else {
             fatalError("Could not create server URL.")
         }
@@ -43,7 +47,6 @@ public final class WeatherClient {
                     throw WeatherError.unexpectedResponse
                 }
 
-                // Map the generated schema type to our clean, public `WeatherData` type.
                 return WeatherData(
                     temperature: current.temperature,
                     windSpeed: current.windspeed,

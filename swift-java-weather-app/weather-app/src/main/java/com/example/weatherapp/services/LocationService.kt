@@ -23,7 +23,6 @@ import com.example.weatherlib.Location
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import org.swift.swiftkit.core.SwiftArena
-import java.util.concurrent.atomic.AtomicBoolean
 
 typealias AndroidLocation = android.location.Location
 
@@ -33,7 +32,7 @@ class LocationService(private val context: Context) : LocationFetcher {
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
 
-    override fun currentLocation(): Location {
+    override fun currentLocation(`swiftArena$`: SwiftArena?): Location {
         val androidLocation: AndroidLocation? = if (ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -50,6 +49,7 @@ class LocationService(private val context: Context) : LocationFetcher {
             throw IllegalStateException("Failed to retrieve location. Ensure location permissions are granted and location services are enabled.")
         }
 
-        return Location.init(androidLocation.latitude, androidLocation.longitude, arena)
+        val location = Location.init(androidLocation.latitude, androidLocation.longitude, arena);
+        return location
     }
 }
