@@ -107,8 +107,8 @@ def minSdk = android.defaultConfig.minSdkVersion.apiLevel
  */
 def abis = [
     "arm64-v8a"     : [triple: "aarch64-unknown-linux-android${minSdk}", androidSdkLibDirectory: "swift-aarch64", ndkDirectory: "aarch64-linux-android"],
-    // "armeabi-v7a"   : [triple: "armv7-unknown-linux-android${minSdk}", androidSdkLibDirectory: "swift-armv7", ndkDirectory: "arm-linux-android"],
-    // "x86_64"        : [triple: "x86_64-unknown-linux-android${minSdk}", androidSdkLibDirectory: "swift-x86_64", ndkDirectory: "x86_64-linux-android"]
+    "armeabi-v7a"   : [triple: "armv7-unknown-linux-android${minSdk}", androidSdkLibDirectory: "swift-armv7", ndkDirectory: "arm-linux-android"],
+    "x86_64"        : [triple: "x86_64-unknown-linux-android${minSdk}", androidSdkLibDirectory: "swift-x86_64", ndkDirectory: "x86_64-linux-android"]
 ]
 def generatedJniLibsDir = layout.buildDirectory.dir("generated/jniLibs")
 def swiftSdkPath = "${getSwiftSDKPath().absolutePath}/${sdkName}"
@@ -149,7 +149,7 @@ abis.each { abi, info ->
 
         workingDir = layout.projectDirectory
         executable(getSwiftlyPath())
-        args("run", "swift", "build", "+${swiftVersion}", "--swift-sdk", info.triple, "--disable-sandbox")
+        args("run", "swift", "build", "+${swiftVersion}", "--swift-sdk", info.triple)
     }
 
     buildSwiftAll.configure { dependsOn(task) }
