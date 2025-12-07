@@ -1,7 +1,7 @@
 # swift-java on Android
 
-This example contains a sample Android application that demonstrates how to call Swift code from a Android app.
-The example shows how to call `async` Swift functions from Kotlin/Java and also how it is possible
+This example contains a sample Android application that demonstrates how to call Swift code from an Android app.
+It shows you how to call `async` Swift functions from Kotlin/Java and also how it is possible
 to implement a Swift `protocol` using a Java class and pass that back to Swift.
 
 The example consists of an Android application (`weather-app`) and a Swift library (`weather-lib`) that fetches the weather for the current location. The Swift library uses [swift-java](https://github.com/swiftlang/swift-java) and the new JNI mode to **automatically generate Java wrappers** for calling into the Swift library.
@@ -16,8 +16,7 @@ A Swift package that uses `swift-openapi-generator` to call the [Open-Meteo Weat
 
 The Swift library exposes a Swift `protocol` named `LocationFetcher`, which is used by `WeatherClient` to
 retrieve the current user location. This is a traditional API design in Swift, and allows any consumers
-of the library to provide their own mechanism of retrieving the location.
-For iOS this could mean using `CLLocationManager`. 
+of the library to provide their own mechanism of retrieving the location. For iOS, this could mean using `CLLocationManager`. 
 
 `swift-java` allows us to implement the `LocationFetcher` protocol using a Java class,
 and therefore use Android APIs to retrieve the user location and pass that back to Swift.
@@ -35,14 +34,14 @@ A standard Android application written in Kotlin using Jetpack Compose.
 Before you can build and run this project, you need to have the following installed:
 
 * **Java Development Kit (JDK)**: This example requires the use of JDK 25. This is only necessary to locally publish the swift-java dependencies, and will not be required in the future. To simplify the build steps, we recommend installing JDK 25 and following all the steps below using the same JDK. Ensure the `JAVA_HOME` environment variable is set to your JDK installation path.
-* **Swiftly**: You need to install [Swiftly](https://www.swift.org/install/)
+* **Swiftly**: You need to install [Swiftly](https://www.swift.org/install/) to download the latest open-source Swift toolchain
 * **Swift SDK for Android**: You need to install the [Swift SDK for Android](https://swift.org/install)
 
 ## Setup and Configuration
 
 ### Prepare Swift Android SDK and matching Swift
 
-Currently, these examples utilize very recent nightly Swift Android SDK versions. In order to install these, you can use Swiftly (the Swift toolchain installer):
+Currently, these examples utilize very recent nightly Swift Android SDK versions.
 
 You can follow [these instructions](https://www.swift.org/documentation/articles/swift-sdk-for-android-getting-started.html) to install an appropriate Swift SDK for Android.
 
