@@ -30,7 +30,7 @@ business logic, algorithms, or libraries in Swift, while maintaining a standard
 Kotlin/Java frontend.
 
 ### Additional `swift-java` examples
-The **[swift-java-weather-app](hello-swift-java/)** example showcases automatic bridging of a few common and useful
+The **[swift-java-weather-app](swift-java-weather-app/)** example showcases automatic bridging of a few common and useful
 Swift language features, such as `async` functions and implementing a Swift `protocol` in Java,
 which can be passed ~~back~~ to Swift.
 
