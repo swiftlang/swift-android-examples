@@ -44,12 +44,14 @@ class LocationService(private val context: Context) : LocationFetcher {
         } else {
             null
         }
-
         if (androidLocation == null) {
             throw IllegalStateException("Failed to retrieve location. Ensure location permissions are granted and location services are enabled.")
         }
-
-        val location = Location.init(androidLocation.latitude, androidLocation.longitude, arena);
+        val location = Location.init(
+            androidLocation.latitude,
+            androidLocation.longitude,
+            arena
+        );
         return location
     }
 }

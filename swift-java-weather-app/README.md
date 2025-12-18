@@ -76,7 +76,7 @@ Next, let's prepare and publish the swift-java support libraries:
     ```bash
     swift package resolve
     ```
-3. Publish the `swift-java` packages to local Maven repo
+3. Publish the `swift-java` packages to a local Maven repo
     ```bash
     ./.build/checkouts/swift-java/gradlew --project-dir .build/checkouts/swift-java :SwiftKitCore:publishToMavenLocal
     ```

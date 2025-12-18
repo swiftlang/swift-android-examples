@@ -29,6 +29,11 @@ This approach is ideal for production Android applications where you want to wri
 business logic, algorithms, or libraries in Swift, while maintaining a standard
 Kotlin/Java frontend.
 
+### Additional `swift-java` examples
+The **[swift-java-weather-app](hello-swift-java/)** example showcases automatic bridging of a few common and useful
+Swift language features, such as `async` functions and implementing a Swift `protocol` in Java,
+which can be passed ~~back~~ to Swift.
+
 ## C++ Integration Example
 
 The **[hello-cpp-swift](hello-cpp-swift/)** example demonstrates how to integrate
