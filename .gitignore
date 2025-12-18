@@ -1,11 +1,18 @@
 *.iml
-.gradle
+**/.gradle/
 /local.properties
 /.idea
 .DS_Store
-/build
+build/
 /captures
 .externalNativeBuild
-.cxx
+**/.cxx/
 local.properties
 jniLibs
+
+# C++ build artifacts
+**/prebuilt/
+
+# Swift build artifacts
+**/.build/
+**/Package.resolved

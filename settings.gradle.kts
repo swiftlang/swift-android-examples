@@ -41,3 +41,7 @@ include(":hello-swift-raw-jni-library")
 
 // native-only examples
 include(":native-activity")
+
+// cpp-swift example
+include(":hello-cpp-swift:swift-lib")
+include(":hello-cpp-swift:app")
