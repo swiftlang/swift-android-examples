@@ -10,6 +10,10 @@ build/
 local.properties
 jniLibs
 
+# Kotlin Gradle plugin data
+# See https://kotlinlang.org/docs/whatsnew20.html#new-directory-for-kotlin-data-in-gradle-projects
+.kotlin/
+
 # C++ build artifacts
 **/prebuilt/
 
