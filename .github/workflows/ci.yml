@@ -236,6 +236,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: apks-${{ matrix.os }}-${{ matrix.swift_version }}-${{ matrix.ndk_version }}
+          name: apks-${{ matrix.os }}-${{ matrix.swift_version }}-${{ matrix.ndk_version }}-${{ matrix.configuration }}
           path: '**/build/outputs/apk/**/*.apk'
           if-no-files-found: warn
