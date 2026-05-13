@@ -254,7 +254,7 @@ jobs:
       - name: Summarize APK artifacts
         if: always()
         run: |
-          echo "## APK Artifacts (os:${{ matrix.os }} / swift:${{ matrix.swift_version }} / ndk:${{ matrix.ndk_version }}) / configuration:${{ matrix.configuration }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "## APK Artifacts (os:${{ matrix.os }} / swift:${{ steps.resolve-sdk.outputs.swift_install }} / ndk:${{ matrix.ndk_version }} / configuration:${{ matrix.configuration }})" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "| Project | APK | Size |" >> "$GITHUB_STEP_SUMMARY"
           echo "|---------|-----|------|" >> "$GITHUB_STEP_SUMMARY"
@@ -276,6 +276,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: apks-${{ matrix.os }}-${{ matrix.swift_version }}-${{ matrix.ndk_version }}-${{ matrix.configuration }}
+          name: apks-${{ matrix.os }}-${{ steps.resolve-sdk.outputs.swift_install }}-${{ matrix.ndk_version }}-${{ matrix.configuration }}
           path: '**/build/outputs/apk/**/*.apk'
           if-no-files-found: warn
