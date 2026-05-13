@@ -165,7 +165,7 @@ jobs:
           echo "${{ steps.resolve-sdk.outputs.sdk_checksum }}  $HOME/swift-sdk-cache/${{ steps.resolve-sdk.outputs.sdk_filename }}" | shasum -a 256 -c -
 
       - name: Cache Host Toolchain
-        id: cache-swift-sdk
+        id: cache-swiftly-toolchain
         uses: actions/cache@v5
         with:
           key: swiftly-${{ runner.os }}-${{ runner.arch }}-${{ steps.resolve-sdk.outputs.swift_install }}
