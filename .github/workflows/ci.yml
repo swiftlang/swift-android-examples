@@ -89,9 +89,10 @@ jobs:
       - name: Set ANDROID_NDK_HOME
         run: echo "ANDROID_NDK_HOME=$HOME/android-ndk-${NDK_VERSION}" >> "$GITHUB_ENV"
 
-      - name: Install Android Swift SDK and matching host toolchain
-        # Looks up the Android Swift SDK URL and checksum from the swift.org
-        # install API and installs it via `swift sdk install`.
+      - name: Resolve Android Swift SDK download URL
+        id: resolve-sdk
+        # Look up the Android Swift SDK URL and checksum from the swift.org
+        # install API.
         run: |
           set -euxo pipefail
           case "$SWIFT_VERSION" in
@@ -132,13 +133,13 @@ jobs:
           swift_install=${swift_install#swift-}
           swift_install=${swift_install/-RELEASE/}
 
-          echo "Installing Android Swift SDK and host toolchain"
-          echo "  tag:      $swift_install"
-          echo "  url:      $sdk_url"
-          echo "  checksum: $sdk_checksum"
-          swiftly install "${swift_install}"
-          swift sdk install "$sdk_url" --checksum "$sdk_checksum"
-          swift sdk list
+          sdk_filename="${snapshot_tag}_android.artifactbundle.tar.gz"
+
+          echo "snapshot_tag=${snapshot_tag}" >> "$GITHUB_OUTPUT"
+          echo "sdk_url=${sdk_url}" >> "$GITHUB_OUTPUT"
+          echo "sdk_checksum=${sdk_checksum}" >> "$GITHUB_OUTPUT"
+          echo "swift_install=${swift_install}" >> "$GITHUB_OUTPUT"
+          echo "sdk_filename=${sdk_filename}" >> "$GITHUB_OUTPUT"
 
           # Override the matrix-supplied SWIFT_VERSION (e.g. "6.3") with the
           # resolved patch version (e.g. "6.3.1") so the gradle scripts pick up
@@ -147,6 +148,32 @@ jobs:
           # same reason.
           echo "SWIFT_VERSION=${swift_install}" >> "$GITHUB_ENV"
           echo "SWIFT_ANDROID_SDK_VERSION=${snapshot_tag#swift-}_android" >> "$GITHUB_ENV"
+
+      - name: Cache Android Swift SDK artifact
+        id: cache-swift-sdk
+        uses: actions/cache@v5
+        with:
+          path: ~/swift-sdk-cache/${{ steps.resolve-sdk.outputs.sdk_filename }}
+          key: ${{ steps.resolve-sdk.outputs.sdk_filename }}
+
+      - name: Download Android Swift SDK artifact
+        if: steps.cache-swift-sdk.outputs.cache-hit != 'true'
+        run: |
+          set -euxo pipefail
+          mkdir -p "$HOME/swift-sdk-cache"
+          curl -L -o "$HOME/swift-sdk-cache/${{ steps.resolve-sdk.outputs.sdk_filename }}" --retry 3 "${{ steps.resolve-sdk.outputs.sdk_url }}"
+          echo "${{ steps.resolve-sdk.outputs.sdk_checksum }}  $HOME/swift-sdk-cache/${{ steps.resolve-sdk.outputs.sdk_filename }}" | shasum -a 256 -c -
+
+      - name: Install host toolchain and Android Swift SDK
+        run: |
+          set -euxo pipefail
+          echo "Installing Android Swift SDK and host toolchain"
+          echo "  tag:      ${{ steps.resolve-sdk.outputs.swift_install }}"
+          echo "  file:     $HOME/swift-sdk-cache/${{ steps.resolve-sdk.outputs.sdk_filename }}"
+          echo "  checksum: ${{ steps.resolve-sdk.outputs.sdk_checksum }}"
+          swiftly install "${{ steps.resolve-sdk.outputs.swift_install }}"
+          swift sdk install "$HOME/swift-sdk-cache/${{ steps.resolve-sdk.outputs.sdk_filename }}"
+          swift sdk list
 
       - name: Configure Swift Android SDK
         run: |
