@@ -74,8 +74,8 @@ jobs:
         id: cache-ndk
         uses: actions/cache@v5
         with:
-          path: ~/android-ndk-${{ matrix.ndk_version }}
           key: android-ndk-${{ runner.os }}-${{ runner.arch }}-${{ matrix.ndk_version }}
+          path: ~/android-ndk-${{ matrix.ndk_version }}
 
       - name: Install Android NDK
         if: steps.cache-ndk.outputs.cache-hit != 'true'
@@ -153,8 +153,8 @@ jobs:
         id: cache-swift-sdk
         uses: actions/cache@v5
         with:
-          path: ~/swift-sdk-cache/${{ steps.resolve-sdk.outputs.sdk_filename }}
           key: ${{ steps.resolve-sdk.outputs.sdk_filename }}
+          path: ~/swift-sdk-cache/${{ steps.resolve-sdk.outputs.sdk_filename }}
 
       - name: Download Android Swift SDK artifact
         if: steps.cache-swift-sdk.outputs.cache-hit != 'true'
@@ -163,6 +163,16 @@ jobs:
           mkdir -p "$HOME/swift-sdk-cache"
           curl -L -o "$HOME/swift-sdk-cache/${{ steps.resolve-sdk.outputs.sdk_filename }}" --retry 3 "${{ steps.resolve-sdk.outputs.sdk_url }}"
           echo "${{ steps.resolve-sdk.outputs.sdk_checksum }}  $HOME/swift-sdk-cache/${{ steps.resolve-sdk.outputs.sdk_filename }}" | shasum -a 256 -c -
+
+      - name: Cache Host Toolchain
+        id: cache-swift-sdk
+        uses: actions/cache@v5
+        with:
+          key: swiftly-${{ runner.os }}-${{ runner.arch }}-${{ steps.resolve-sdk.outputs.swift_install }}
+          path: |
+            ~/Library/Developer/Toolchains
+            ~/.local/share/swiftly
+            ~/.local/bin/swiftly
 
       - name: Install host toolchain and Android Swift SDK
         run: |
