@@ -165,6 +165,9 @@ jobs:
           echo "${{ steps.resolve-sdk.outputs.sdk_checksum }}  $HOME/swift-sdk-cache/${{ steps.resolve-sdk.outputs.sdk_filename }}" | shasum -a 256 -c -
 
       - name: Cache Host Toolchain
+        # Disabled because we are overflowing the 10GB GitHub cache limit with this
+        # https://github.com/swiftlang/swift-android-examples/pull/44#discussion_r3236006987
+        if: false
         id: cache-swiftly-toolchain
         uses: actions/cache@v5
         with:
