@@ -68,7 +68,7 @@ export JAVA_HOME="${HOME}/.sdkman/candidates/java/current"
 
 Next, let's prepare and publish the swift-java support libraries:
 
-1.  Enter the `hashing-lib` directory
+1.  Enter the `weather-lib` directory
     ```bash
     cd weather-lib
     ```
