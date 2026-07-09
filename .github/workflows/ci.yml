@@ -21,7 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         swift_version: ['6.3', 'nightly-6.3', 'nightly-main']
-        ndk_version: ['r27d', 'r29', 'r30-beta1']
+        ndk_version: ['r27d', 'r29', 'r30-beta2']
         os: ['ubuntu-latest', 'macos-latest']
         configuration: ['Debug', 'Release']
     runs-on: ${{ matrix.os }}
