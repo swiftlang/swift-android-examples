@@ -107,10 +107,62 @@ def swiftRuntimeLibs = [
 // Can be overridden via the SWIFT_VERSION environment variable, which is
 // useful for CI matrices that test multiple toolchains.
 def swiftVersion = System.getenv("SWIFT_VERSION") ?: "6.3"
+
+/**
+ * Resolve the installed Android Swift SDK artifactbundle suffix.
+ *
+ * Bundle directory names vary across toolchains and platforms (e.g. a
+ * release requested as "6.3" is installed by `swift sdk install` as
+ * "swift-6.3.3-RELEASE_android.artifactbundle"; snapshots use date-stamped
+ * tags entirely), so rather than guessing a naming scheme, scan the Swift
+ * SDK directory for what's actually installed:
+ *   - an explicit override (the SWIFT_ANDROID_SDK_VERSION env var) always wins;
+ *   - with exactly one "*android*.artifactbundle" present, use it, whatever
+ *     it's named -- this covers the common case of a single SDK installed;
+ *   - with several present, prefer one whose name starts with the
+ *     configured swiftVersion, else fall back to the most recently
+ *     installed one;
+ *   - with none present, fall back to the historical guessed name so
+ *     existing diagnostics still fire.
+ */
+def resolveAndroidSdkVersion(String requestedSwiftVersion) {
+    def override = System.getenv("SWIFT_ANDROID_SDK_VERSION")
+    if (override) {
+        return override
+    }
+
+    def fallback = "${requestedSwiftVersion}-RELEASE_android"
+    def bundles = getSwiftSDKPath().listFiles { File candidate ->
+        candidate.isDirectory() && candidate.name.contains("android") && candidate.name.endsWith(".artifactbundle")
+    }?.toList() ?: []
+
+    def resolved
+    if (bundles.size() == 0) {
+        resolved = null
+    } else if (bundles.size() == 1) {
+        resolved = bundles[0]
+    } else {
+        resolved = bundles.find { it.name.startsWith("swift-${requestedSwiftVersion}") } ?: bundles.max { it.lastModified() }
+    }
+
+    if (!resolved) {
+        return fallback
+    }
+    def name = resolved.name
+    if (name.startsWith("swift-")) {
+        name = name.substring("swift-".length())
+    }
+    if (name.endsWith(".artifactbundle")) {
+        name = name.substring(0, name.length() - ".artifactbundle".length())
+    }
+    return name
+}
+
 // Android Swift SDK artifactbundle suffix. Substituted into the bundle
-// directory name as "swift-${androidSdkVersion}.artifactbundle". Can be
-// overridden via the SWIFT_ANDROID_SDK_VERSION environment variable.
-def androidSdkVersion = System.getenv("SWIFT_ANDROID_SDK_VERSION") ?: "${swiftVersion}-RELEASE_android"
+// directory name as "swift-${androidSdkVersion}.artifactbundle". Auto-detected
+// by resolveAndroidSdkVersion() unless pinned via the SWIFT_ANDROID_SDK_VERSION
+// environment variable.
+def androidSdkVersion = resolveAndroidSdkVersion(swiftVersion)
 def sdkName = "swift-${androidSdkVersion}.artifactbundle"
 def minSdk = android.defaultConfig.minSdkVersion.apiLevel
 
