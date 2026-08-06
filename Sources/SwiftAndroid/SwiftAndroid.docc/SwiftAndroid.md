@@ -3,7 +3,8 @@
 Build native libraries and apps for Android with Swift, from toolchain setup to integrating with Android tooling.
 
 @Metadata {
-    @DisplayName("Swift for Android")
+    @DisplayName("Android")
+    @TitleHeading("Platforms")
 }
 
 ## Topics
