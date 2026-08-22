@@ -35,7 +35,7 @@ Before you can build and run this project, you need to have the following instal
 
 * **Java Development Kit (JDK)**: This example requires the use of JDK 25. This is only necessary to locally publish the swift-java dependencies, and will not be required in the future. To simplify the build steps, we recommend installing JDK 25 and following all the steps below using the same JDK. Ensure the `JAVA_HOME` environment variable is set to your JDK installation path.
 * **Swiftly**: You need to install [Swiftly](https://www.swift.org/install/) to download the latest open-source Swift toolchain
-* **Swift SDK for Android**: You need to install the [Swift SDK for Android](https://swift.org/install)
+* **Swift SDK for Android**: You need to install the [Swift SDK for Android](https://www.swift.org/documentation/articles/swift-sdk-for-android-getting-started.html#2-install-the-swift-sdk-for-android)
 
 ## Setup and Configuration
 
