@@ -262,6 +262,9 @@ jobs:
       - name: Build swift-java-weather-app APK
         run: ./gradlew :swift-java-weather-app-weather-app:assemble${{ matrix.configuration }} --stacktrace
 
+      - name: Build swift-java-ui-showcase APK
+        run: ./gradlew :swift-java-ui-showcase-showcase-app:assemble${{ matrix.configuration }} --stacktrace
+
       - name: Build hello-cpp-swift cpp-lib
         working-directory: hello-cpp-swift/cpp-lib
         run: ./build-android-static.sh

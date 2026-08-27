@@ -34,6 +34,14 @@ The **[swift-java-weather-app](swift-java-weather-app/)** example showcases auto
 Swift language features, such as `async` functions and implementing a Swift `protocol` in Java,
 which can be passed ~~back~~ to Swift.
 
+The **[swift-java-ui-showcase](swift-java-ui-showcase/)** example is a "kitchen sink"
+catalog of UI components (buttons, selection controls, sliders, text inputs, and a
+validated form) where Swift owns the whole UI model: each screen's component tree,
+state, event handling, and validation are declared in Swift, and a small generic
+Kotlin/Compose renderer draws whatever Swift describes over a single JSON/JNI
+boundary. See [swift-java-ui-showcase/README.md](swift-java-ui-showcase/README.md)
+for the architecture and for how to add your own screen without touching Kotlin.
+
 ## C++ Integration Example
 
 The **[hello-cpp-swift](hello-cpp-swift/)** example demonstrates how to integrate
