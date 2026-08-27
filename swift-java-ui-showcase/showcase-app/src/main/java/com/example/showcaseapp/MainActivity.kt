@@ -20,8 +20,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -31,6 +34,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -39,6 +44,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
@@ -46,6 +52,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.showcaseapp.ui.theme.ShowcaseAppTheme
 import com.example.showcasekit.ShowcaseKit
+import org.json.JSONArray
 import org.json.JSONObject
 
 class MainActivity : ComponentActivity() {
@@ -123,22 +130,68 @@ fun ShowcaseScreen(screenId: String, onBack: () -> Unit) {
             )
         }
     ) { padding ->
-        val components = screen.getJSONArray("components")
+        // Sections aren't a wire concept — Swift only ever emits a flat
+        // component list. Every screen happens to start each section with a
+        // `sectionHeader`, so grouping on that boundary here is enough to
+        // give each section its own visually distinct card.
+        val sections = groupIntoSections(screen.getJSONArray("components"))
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(count = components.length()) { index ->
-                ComponentView(components.getJSONObject(index)) { componentId, event ->
-                    // This calls the Swift function `showcaseDispatch` from
-                    // ShowcaseAPI.swift; Swift handles the event and returns
-                    // the screen's new component tree.
-                    screen = JSONObject(
-                        ShowcaseKit.showcaseDispatch(screenId, componentId, event.toString())
-                    )
+            items(count = sections.size) { index ->
+                val section = sections[index]
+                // The header and its code snippet move into one top row —
+                // title leading, the snippet's info icon trailing — instead
+                // of flowing through the section like an ordinary component.
+                val header = section.firstOrNull { it.getString("kind") == "sectionHeader" }
+                val codeSnippet = section.firstOrNull { it.getString("kind") == "code" }
+                val bodyComponents = section.filterNot { it === header || it === codeSnippet }
+
+                OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            val headerText = header?.getString("text").orEmpty()
+                            Text(text = headerText, style = MaterialTheme.typography.titleMedium)
+                            if (codeSnippet != null) {
+                                CodeSnippetView(codeSnippet, sectionTitle = headerText)
+                            }
+                        }
+                        for (component in bodyComponents) {
+                            ComponentView(component) { componentId, event ->
+                                // This calls the Swift function
+                                // `showcaseDispatch` from ShowcaseAPI.swift;
+                                // Swift handles the event and returns the
+                                // screen's new component tree.
+                                screen = JSONObject(
+                                    ShowcaseKit.showcaseDispatch(screenId, componentId, event.toString())
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
     }
+}
+
+/** Splits a flat component list into sections, starting a new one at every `sectionHeader`. */
+private fun groupIntoSections(components: JSONArray): List<List<JSONObject>> {
+    val sections = mutableListOf<MutableList<JSONObject>>()
+    for (index in 0 until components.length()) {
+        val component = components.getJSONObject(index)
+        if (sections.isEmpty() || component.getString("kind") == "sectionHeader") {
+            sections.add(mutableListOf())
+        }
+        sections.last().add(component)
+    }
+    return sections
 }
