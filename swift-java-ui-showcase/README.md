@@ -15,7 +15,7 @@ Swift code, and every interaction is handled by Swift code.
 The example consists of two components:
 
 - **showcase-lib**: A Swift package (`ShowcaseKit`) that declares the component
-  tree of every screen, holds all UI state, handles every event, and validates
+  tree of every screen, holds all UI state, reduces every action, and validates
   the form. It is exposed to Java by
   [swift-java](https://github.com/swiftlang/swift-java)'s JExtract in JNI mode.
 - **showcase-app**: A Kotlin Android app whose Compose code never hard-codes a
@@ -30,9 +30,9 @@ data-flow loop with Swift as the single source of truth.
 ```
         Compose (Kotlin)                              ShowcaseKit (Swift)
   ┌──────────────────────────┐                 ┌────────────────────────────┐
-  │ user taps / types / drags │──── event ────▶│ showcaseDispatch(screen,   │
-  │                          │    (JSON)       │   component, event)        │
-  │ render component tree    │                 │   → screen handles event,  │
+  │ user taps / types / drags │──── action ───▶│ showcaseDispatch(screen,   │
+  │                          │    (JSON)       │   component, action)       │
+  │ render component tree    │                 │   → screen reduces action, │
   │ (one `when` over "kind") │◀─ new screen ───│     mutates its Swift state│
   └──────────────────────────┘    (JSON)       └────────────────────────────┘
 ```
@@ -44,7 +44,7 @@ Only three functions cross the boundary, all `(String...) -> String`
 |---|---|
 | `showcaseScreens()` | Screen registry (ids + titles) — drives the navigation graph |
 | `showcaseScreen(id)` | Current component tree of one screen |
-| `showcaseDispatch(screenId, componentId, eventJSON)` | Apply a user event, return the new tree |
+| `showcaseDispatch(screenId, componentId, actionJSON)` | Apply a user action, return the new tree |
 
 Because state lives in Swift, it survives navigation: toggle a switch, leave
 the screen, come back — the switch is still on, with no ViewModel or saved
@@ -89,21 +89,28 @@ table and that test together.
 `showcaseScreen(id)` and `showcaseDispatch(...)` return
 `{"id", "title", "components": [...]}` where each component is:
 
-| `kind` | Keys | Events it emits |
+| `kind` | Keys | Actions it emits |
 |---|---|---|
 | `sectionHeader` | `id`, `text` | — |
 | `text` | `id`, `text` | — |
-| `button` | `id`, `label` | `{"type":"tap"}` |
+| `button` | `id`, `label`, `role` (`primary`\|`secondary`) | `{"type":"tap"}` |
 | `toggle` | `id`, `label`, `isOn` | `{"type":"setBool","value":…}` |
 | `checkbox` | `id`, `label`, `isChecked` | `{"type":"setBool","value":…}` |
 | `radioGroup` | `id`, `label`, `options`, `selectedIndex` (nullable) | `{"type":"select","index":…}` |
+| `segmentedControl` | `id`, `label`, `options`, `selectedIndex` | `{"type":"select","index":…}` |
 | `slider` | `id`, `label`, `value`, `min`, `max` | `{"type":"setNumber","value":…}` |
+| `progressIndicator` | `id`, `label`, `value` (`0.0`–`1.0`) | — (display-only) |
+| `stepper` | `id`, `label`, `value`, `min`, `max` (all `Int`) | `{"type":"setNumber","value":±1}` (a delta, not the new value) |
+| `datePicker` | `id`, `label`, `date` (`"yyyy-MM-dd"`) | `{"type":"setString","value":…}` |
+| `alert` | `id`, `title`, `message`, `confirmLabel`, `cancelLabel` | `{"type":"select","index":0}` (confirm) or `{"type":"select","index":1}` (cancel/dismiss) |
 | `textField` | `id`, `label`, `text`, `placeholder`, `keyboard` (`text`\|`email`\|`number`), `error` (nullable) | `{"type":"setString","value":…}` |
+| `textEditor` | `id`, `label`, `text`, `placeholder` | `{"type":"setString","value":…}` |
+| `code` | `id`, `title`, `code` | — (opens a fullscreen modal with Copy and Wrap actions; modal visibility and wrap state stay Kotlin-local) |
 
 ## Add your own screen (~20 lines, no Kotlin)
 
-Conform to `ScreenDefinition` in
-`showcase-lib/Sources/ShowcaseKit/Screens.swift`:
+Conform to `ScreenDefinition` in its own file under
+`showcase-lib/Sources/ShowcaseKit/` (one screen per file, e.g. `ButtonsScreen.swift`):
 
 ```swift
 final class GreetingScreen: ScreenDefinition {
@@ -112,8 +119,8 @@ final class GreetingScreen: ScreenDefinition {
 
   private var name = ""
 
-  func handle(_ event: Event, componentId: String) {
-    if case .setString(let value) = event, componentId == "name" { name = value }
+  func reduce(_ action: Action, componentId: String) {
+    if case .setString(let value) = action, componentId == "name" { name = value }
   }
 
   func body() -> [Component] {
@@ -126,7 +133,7 @@ final class GreetingScreen: ScreenDefinition {
 }
 ```
 
-then append `GreetingScreen()` to `defaultScreens()` in `ShowcaseStore.swift`.
+then append `GreetingScreen()` to `defaultScreens()` in `ScreenRegistry.swift`.
 That's it — the home list and navigation are data-driven from Swift's
 registry, so the new screen appears with no Kotlin changes.
 
