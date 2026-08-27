@@ -14,7 +14,12 @@
 
 /// A user interaction sent from the Kotlin renderer to Swift, addressed to a
 /// component id. The wire format is a JSON object discriminated by `"type"`.
-enum Event: Equatable {
+///
+/// Named `Action` (rather than, say, `Event`) to match the vocabulary of
+/// ReSwift and similar unidirectional-data-flow libraries in the Swift
+/// community — see `ScreenDefinition.reduce(_:componentId:)` for the one
+/// place this departs from that vocabulary's usual contract.
+enum Action: Equatable {
   case tap
   case setBool(Bool)
   case setString(String)
@@ -22,7 +27,7 @@ enum Event: Equatable {
   case select(Int)
 }
 
-extension Event: Codable {
+extension Action: Codable {
   private enum CodingKeys: String, CodingKey {
     case type, value, index
   }
@@ -43,7 +48,7 @@ extension Event: Codable {
       self = .select(try container.decode(Int.self, forKey: .index))
     default:
       throw DecodingError.dataCorruptedError(
-        forKey: .type, in: container, debugDescription: "Unknown event type: \(type)")
+        forKey: .type, in: container, debugDescription: "Unknown action type: \(type)")
     }
   }
 

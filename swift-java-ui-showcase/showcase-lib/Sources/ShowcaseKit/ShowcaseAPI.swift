@@ -20,7 +20,7 @@
 // boundary as a JSON string, in the schema documented in
 // `swift-java-ui-showcase/README.md`:
 //
-//   Compose event -> showcaseDispatch(screen, component, event JSON)
+//   Compose interaction -> showcaseDispatch(screen, component, action JSON)
 //     -> Swift mutates state -> returns new screen JSON -> Compose re-renders
 //
 // Plain `(String...) -> String` top-level functions are used deliberately:
@@ -33,19 +33,19 @@
 /// Returns the registry of showcase screens (ids and titles) as JSON.
 /// The Kotlin navigation graph is built from this list.
 public func showcaseScreens() -> String {
-  ShowcaseStore.shared.screensJSON()
+  ScreenRegistry.shared.screensJSON()
 }
 
 /// Returns the current component tree of one screen as JSON.
 public func showcaseScreen(_ id: String) -> String {
-  ShowcaseStore.shared.screenJSON(id)
+  ScreenRegistry.shared.screenJSON(id)
 }
 
-/// Applies a user event to a component on a screen and returns the screen's
+/// Applies a user action to a component on a screen and returns the screen's
 /// new component tree as JSON.
-public func showcaseDispatch(_ screenId: String, _ componentId: String, _ eventJSON: String)
+public func showcaseDispatch(_ screenId: String, _ componentId: String, _ actionJSON: String)
   -> String
 {
-  ShowcaseStore.shared.dispatch(
-    screenId: screenId, componentId: componentId, eventJSON: eventJSON)
+  ScreenRegistry.shared.dispatch(
+    screenId: screenId, componentId: componentId, actionJSON: actionJSON)
 }
