@@ -6,6 +6,10 @@ buttons, selection controls (switch, checkboxes, radio group), sliders, text
 inputs, and a form with validation — every component you see was declared by
 Swift code, and every interaction is handled by Swift code.
 
+| Home (Swift's screen registry) | Buttons (Swift tap counter) | Form (Swift validation) |
+|---|---|---|
+| ![Home screen](resources/home.png) | ![Buttons screen](resources/buttons.png) | ![Form validation errors](resources/form-validation.png) |
+
 ## Overview
 
 The example consists of two components:
