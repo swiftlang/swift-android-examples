@@ -6,7 +6,7 @@ import PackageDescription
 
 let package = Package(
   name: "ShowcaseKit",
-  platforms: [.macOS(.v15)],
+  platforms: [.macOS(.v15), .iOS(.v18)],
   products: [
     .library(
       name: "ShowcaseKit",
@@ -15,7 +15,7 @@ let package = Package(
     )
   ],
   dependencies: [
-    .package(url: "https://github.com/swiftlang/swift-java", from: "0.1.2")
+    .package(url: "https://github.com/swiftlang/swift-java", from: "0.5.1")
   ],
   targets: [
     .target(
