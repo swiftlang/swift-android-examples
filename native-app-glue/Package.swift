@@ -11,7 +11,8 @@ let package = Package(
   ],
   targets: [
     .target(name: "AndroidNativeAppGlue"),
-    .target(name: "AndroidOpenGL"),
+    // Header-only, so a system library rather than a C target
+    .systemLibrary(name: "AndroidOpenGL"),
   ],
   cxxLanguageStandard: .cxx98
 )

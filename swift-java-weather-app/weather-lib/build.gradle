@@ -121,6 +121,11 @@ def swiftVersion = System.getenv("SWIFT_VERSION") ?: "6.3"
 // overridden via the SWIFT_ANDROID_SDK_VERSION environment variable.
 def androidSdkVersion = System.getenv("SWIFT_ANDROID_SDK_VERSION") ?: "${swiftVersion}-RELEASE_android"
 def sdkName = "swift-${androidSdkVersion}.artifactbundle"
+// Optional Swift SDK bundle id from `swift sdk list`. Needed on Swift 6.4 when
+// more than one Android SDK is installed; Swift 6.3 mis-resolves it, so unset there.
+def swiftSdkId = System.getenv("SWIFT_SDK_ID") ?: null
+// SwiftPM build system ("native" or "swiftbuild"); unset uses the toolchain default.
+def swiftBuildSystem = System.getenv("SWIFT_BUILD_SYSTEM") ?: null
 def minSdk = android.defaultConfig.minSdkVersion.apiLevel
 /**
  * Android ABIs and their Swift triple mappings
@@ -130,6 +135,38 @@ def abis = [
     "armeabi-v7a"   : [triple: "armv7-unknown-linux-android${minSdk}", androidSdkLibDirectory: "swift-armv7", ndkDirectory: "arm-linux-android"],
     "x86_64"        : [triple: "x86_64-unknown-linux-android${minSdk}", androidSdkLibDirectory: "swift-x86_64", ndkDirectory: "x86_64-linux-android"]
 ]
+// Arguments shared by `swift build` and `swift build --show-bin-path`.
+def swiftBuildArgs = { info ->
+    // We must disable sandbox, because we use the `enableJavaCallbacks` feature
+    // of swift-java.
+    def args = ["run", "swift", "build", "+${swiftVersion}", "--disable-sandbox"]
+    if (swiftSdkId) {
+        args += ["--swift-sdk", swiftSdkId, "--triple", info.triple]
+    } else {
+        args += ["--swift-sdk", info.triple]
+    }
+    if (swiftBuildSystem) {
+        args += ["--build-system", swiftBuildSystem]
+    }
+    return args
+}
+
+// The output directory differs between the native and swiftbuild build systems,
+// so ask SwiftPM for it.
+def resolveSwiftBinPath = { info ->
+    def command = [getSwiftlyPath().toString()] + swiftBuildArgs(info) + ["--show-bin-path"]
+    def process = new ProcessBuilder(command.collect { it.toString() })
+        .directory(layout.projectDirectory.asFile)
+        .redirectError(ProcessBuilder.Redirect.INHERIT)
+        .start()
+    def stdout = process.inputStream.text
+    if (process.waitFor() != 0) {
+        throw new GradleException("Failed to resolve the Swift build output path: ${command.join(' ')}")
+    }
+    def path = stdout.readLines().collect { it.trim() }.findAll { !it.isEmpty() }.last()
+    return file(path)
+}
+
 def generatedJniLibsDir = layout.buildDirectory.dir("generated/jniLibs")
 def swiftSdkPath = "${getSwiftSDKPath().absolutePath}/${sdkName}"
 
@@ -154,14 +191,11 @@ abis.each { abi, info ->
             println("Building Swift for ${abi} (${info.triple})...")
         }
 
-        outputs.dir(layout.projectDirectory.dir(".build/${info.triple}/debug"))
+        outputs.dir { resolveSwiftBinPath(info) }
 
         workingDir = layout.projectDirectory
         executable(getSwiftlyPath())
-
-        // We must disable sandbox, because we use the `enableJavaCallbacks` feature
-        // of swift-java.
-        args("run", "swift", "build", "+${swiftVersion}", "--swift-sdk", info.triple, "--build-system", "native", "--disable-sandbox")
+        args(swiftBuildArgs(info))
     }
 
     buildSwiftAll.configure { dependsOn(task) }
@@ -172,7 +206,7 @@ def copyJniLibs = tasks.register("copyJniLibs", Copy) {
 
     abis.each { abi, info ->
         // Copy the built .so files
-        from(layout.projectDirectory.dir(".build/${info.triple}/debug")) {
+        from({ resolveSwiftBinPath(info) }) {
             include("*.so")
             into(abi)
         }
