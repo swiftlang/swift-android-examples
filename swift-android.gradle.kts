@@ -18,6 +18,7 @@
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Exec
 import org.gradle.api.file.DuplicatesStrategy
+import java.util.concurrent.Callable
 
 // Configuration class for Swift builds
 data class SwiftConfig(
@@ -35,7 +36,12 @@ data class SwiftConfig(
     // Android Swift SDK artifactbundle suffix. Substituted into the bundle
     // directory name as "swift-${androidSdkVersion}.artifactbundle". Can be
     // overridden via the SWIFT_ANDROID_SDK_VERSION environment variable.
-    var androidSdkVersion: String = System.getenv("SWIFT_ANDROID_SDK_VERSION")?.takeIf { it.isNotEmpty() } ?: "${swiftVersion}-RELEASE_android"
+    var androidSdkVersion: String = System.getenv("SWIFT_ANDROID_SDK_VERSION")?.takeIf { it.isNotEmpty() } ?: "${swiftVersion}-RELEASE_android",
+    // SwiftPM build system ("native" or "swiftbuild"); unset uses the toolchain default.
+    var buildSystem: String? = System.getenv("SWIFT_BUILD_SYSTEM")?.takeIf { it.isNotEmpty() },
+    // Optional Swift SDK bundle id from `swift sdk list`. Needed on Swift 6.4 when
+    // more than one Android SDK is installed; Swift 6.3 mis-resolves it, so unset there.
+    var swiftSdkId: String? = System.getenv("SWIFT_SDK_ID")?.takeIf { it.isNotEmpty() }
 )
 
 // Architecture definitions
@@ -134,6 +140,40 @@ fun getSwiftResourcesPath(arch: Arch): String {
     return "${getSwiftSDKPath()}/swift-${sdkVersion}.artifactbundle/swift-android/swift-resources/usr/lib/swift_static-${arch.swiftArch}/"
 }
 
+// Arguments shared by `swift build` and `swift build --show-bin-path`.
+fun swiftBuildArguments(arch: Arch, isDebug: Boolean): List<String> {
+    val triple = "${arch.swiftTarget}${swiftConfig.apiLevel}"
+    val sdkArgs = swiftConfig.swiftSdkId?.let { listOf("--swift-sdk", it, "--triple", triple) }
+        ?: listOf("--swift-sdk", triple)
+    val buildSystemArgs = swiftConfig.buildSystem?.let { listOf("--build-system", it) } ?: emptyList()
+    val configurationArgs = listOf("-c", if (isDebug) "debug" else "release")
+    val extraArgs = if (isDebug) swiftConfig.debugExtraBuildFlags else swiftConfig.releaseExtraBuildFlags
+    return listOf(
+        "run", "+${swiftConfig.swiftVersion}", "swift", "build",
+    ) + sdkArgs + buildSystemArgs + listOf(
+        "-Xswiftc", "-static-stdlib",
+        "-Xswiftc", "-resource-dir",
+        "-Xswiftc", getSwiftResourcesPath(arch),
+    ) + configurationArgs + extraArgs
+}
+
+// The output directory differs between the native and swiftbuild build systems,
+// so ask SwiftPM for it.
+fun resolveSwiftBinPath(arch: Arch, isDebug: Boolean): File {
+    val command = listOf(getSwiftlyPath()) + swiftBuildArguments(arch, isDebug) + "--show-bin-path"
+    val process = ProcessBuilder(command)
+        .directory(file("src/main/swift"))
+        .redirectError(ProcessBuilder.Redirect.INHERIT)
+        .start()
+    val stdout = process.inputStream.bufferedReader().readText()
+    if (process.waitFor() != 0) {
+        throw GradleException("Failed to resolve the Swift build output path: ${command.joinToString(" ")}")
+    }
+    val path = stdout.lines().map { it.trim() }.lastOrNull { it.isNotEmpty() }
+        ?: throw GradleException("`swift build --show-bin-path` printed no path: ${command.joinToString(" ")}")
+    return file(path)
+}
+
 // Function to create Swift build task
 fun createSwiftBuildTask(
     buildTypeName: String,
@@ -147,21 +187,7 @@ fun createSwiftBuildTask(
     } ?: tasks.register<Exec>(taskName) {
         val swiftlyPath = getSwiftlyPath()
         val resourcesPath = getSwiftResourcesPath(arch)
-        val swiftVersion = swiftConfig.swiftVersion
-
-        // Build the SDK name based on architecture
-        val sdkName = "${arch.swiftTarget}${swiftConfig.apiLevel}"
-        val defaultArgs = listOf(
-            "run", "+${swiftVersion}", "swift", "build",
-            "--swift-sdk", sdkName,
-            "--build-system", "native", // old build system until we can sort out the output paths
-            "-Xswiftc", "-static-stdlib",
-            "-Xswiftc", "-resource-dir",
-            "-Xswiftc", resourcesPath
-        )
-        val configurationArgs = listOf("-c", if (isDebug) "debug" else "release")
-        val extraArgs = if (isDebug) swiftConfig.debugExtraBuildFlags else swiftConfig.releaseExtraBuildFlags
-        val arguments = defaultArgs + configurationArgs + extraArgs
+        val arguments = swiftBuildArguments(arch, isDebug)
 
         workingDir("src/main/swift")
         executable(swiftlyPath)
@@ -184,7 +210,8 @@ fun createSwiftBuildTask(
 
             println("Building Swift for ${arch.variantName} ${if (isDebug) "Debug" else "Release"}")
             println("Using swiftly: $swiftlyPath")
-            println("Swift SDK: $sdkName")
+            println("Swift SDK: ${swiftConfig.swiftSdkId ?: "swift-${swiftConfig.androidSdkVersion}"} (${arch.swiftTarget}${swiftConfig.apiLevel})")
+            println("Build system: ${swiftConfig.buildSystem ?: "toolchain default"}")
         }
     }
 }
@@ -201,12 +228,6 @@ fun createCopySwiftLibrariesTask(
     return tasks.findByName(taskName)?.let {
         tasks.named<Copy>(taskName)
     } ?: tasks.register<Copy>(taskName) {
-        val swiftPmBuildPath = if (isDebug) {
-            "src/main/swift/.build/${arch.swiftTarget}${swiftConfig.apiLevel}/debug"
-        } else {
-            "src/main/swift/.build/${arch.swiftTarget}${swiftConfig.apiLevel}/release"
-        }
-
         dependsOn(swiftBuildTask)
 
         // Copy c++ shared runtime libraries
@@ -215,9 +236,9 @@ fun createCopySwiftLibrariesTask(
         }
 
         // Copy built libraries
-        from(fileTree(swiftPmBuildPath) {
+        from(Callable { resolveSwiftBinPath(arch, isDebug) }) {
             include("*.so", "*.so.*")
-        })
+        }
 
         if (isDebug) {
             into("src/debug/jniLibs/${arch.androidAbi}")
