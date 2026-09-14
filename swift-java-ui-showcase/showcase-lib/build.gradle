@@ -1,0 +1,217 @@
+//===----------------------------------------------------------------------===//
+//
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2026 Apple Inc. and the Swift.org project authors
+// Licensed under Apache License v2.0
+//
+// See LICENSE.txt for license information
+// See CONTRIBUTORS.txt for the list of Swift.org project authors
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+
+import java.nio.file.*
+import org.gradle.internal.os.OperatingSystem
+import groovy.json.JsonSlurper
+import kotlinx.serialization.json.*
+
+plugins {
+    alias(libs.plugins.android.library)
+}
+
+android {
+    namespace "com.example.showcaselib"
+    compileSdkVersion 36
+
+    defaultConfig {
+        minSdkVersion 28
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation('org.swift.swiftkit:swiftkit-core:+')
+}
+
+// Helper function to get swiftly executable path
+def getSwiftlyPath() {
+    def fromConfig = project.findProperty("swiftly.path") ?: System.getenv("SWIFTLY_PATH")
+    if (fromConfig) {
+        return file(fromConfig)
+    }
+
+    // Try to find swiftly in common locations
+    def homeDir = System.getProperty("user.home")
+    def possiblePaths = [
+        "$homeDir/.swiftly/bin/swiftly",
+        "$homeDir/.local/share/swiftly/bin/swiftly",
+        "$homeDir/.local/bin/swiftly",
+        "/usr/local/bin/swiftly",
+        "/opt/homebrew/bin/swiftly",
+        "/root/.local/share/swiftly/bin/swiftly"
+    ]
+
+    for (path in possiblePaths) {
+        if (file(path).exists()) {
+            return path
+        }
+    }
+
+    throw new GradleException("Swift SDK path not found. Please set swiftly.path in the gradle.properties file or set SWIFTLY_PATH environment variable.")
+}
+def getSwiftSDKPath() {
+    def fromConfig = project.findProperty("swift.sdk.path") ?: System.getenv("SWIFT_SDK_PATH")
+    if (fromConfig) {
+        return file(fromConfig)
+    }
+
+    // If no custom path is set, try to find the Swift SDK in common locations.
+    def homeDir = System.getProperty("user.home")
+    def possiblePaths = [
+        "${homeDir}/Library/org.swift.swiftpm/swift-sdks/",     // Common on macOS
+        "${homeDir}/.config/swiftpm/swift-sdks/",               // Common on Linux
+        "${homeDir}/.swiftpm/swift-sdks/",                      // Older location
+        "/root/.swiftpm/swift-sdks/"                            // For builds running as root (e.g., in some CI/Docker environments)
+    ]
+
+    // Iterate through the list of possible paths.
+    for (path in possiblePaths) {
+        // The 'file()' method is a Gradle helper that resolves a path string into a File object.
+        if (file(path).exists()) {
+            // If the directory exists, we've found it. Return the path immediately.
+            return file(path)
+        }
+    }
+
+    // If the loop completes without finding a valid path, throw an exception.
+    throw new GradleException("Swift SDK path not found. Please set swift.sdk.path in the gradle.properties file or set SWIFT_SDK_PATH environment variable.")
+}
+
+// List of Swift runtime libraries we want to include
+def swiftRuntimeLibs = [
+    "swiftCore",
+    "swift_Concurrency",
+    "swift_StringProcessing",
+    "swift_RegexParser",
+    "swift_Builtin_float",
+    "swift_math",
+    "swiftAndroid",
+    "dispatch",
+    "BlocksRuntime",
+    "swiftSwiftOnoneSupport",
+    "swiftDispatch",
+    "Foundation",
+    "FoundationEssentials",
+    "FoundationInternationalization",
+    "_FoundationICU",
+    "swiftSynchronization"
+]
+// Swift toolchain version passed to swiftly (e.g. "6.3", "main-snapshot").
+// Can be overridden via the SWIFT_VERSION environment variable, which is
+// useful for CI matrices that test multiple toolchains.
+def swiftVersion = System.getenv("SWIFT_VERSION") ?: "6.3"
+// Android Swift SDK artifactbundle suffix. Substituted into the bundle
+// directory name as "swift-${androidSdkVersion}.artifactbundle". Can be
+// overridden via the SWIFT_ANDROID_SDK_VERSION environment variable.
+def androidSdkVersion = System.getenv("SWIFT_ANDROID_SDK_VERSION") ?: "${swiftVersion}-RELEASE_android"
+def sdkName = "swift-${androidSdkVersion}.artifactbundle"
+def minSdk = android.defaultConfig.minSdkVersion.apiLevel
+/**
+ * Android ABIs and their Swift triple mappings
+ */
+def abis = [
+    "arm64-v8a"     : [triple: "aarch64-unknown-linux-android${minSdk}", androidSdkLibDirectory: "swift-aarch64", ndkDirectory: "aarch64-linux-android"],
+    "armeabi-v7a"   : [triple: "armv7-unknown-linux-android${minSdk}", androidSdkLibDirectory: "swift-armv7", ndkDirectory: "arm-linux-android"],
+    "x86_64"        : [triple: "x86_64-unknown-linux-android${minSdk}", androidSdkLibDirectory: "swift-x86_64", ndkDirectory: "x86_64-linux-android"]
+]
+def generatedJniLibsDir = layout.buildDirectory.dir("generated/jniLibs")
+def swiftSdkPath = "${getSwiftSDKPath().absolutePath}/${sdkName}"
+
+def buildSwiftAll = tasks.register("buildSwiftAll") {
+    group = "build"
+    description = "Builds the Swift code for all Android ABIs."
+
+    // If the package description changes, we should execute jextract again, maybe we added jextract to new targets
+    inputs.file(new File(projectDir, "Package.swift"))
+    // This path hardcodes the Swift target name: keep it in sync with the
+    // target defined in Package.swift when copying this file to a new example.
+    inputs.dir(new File(layout.projectDirectory.asFile, "Sources/ShowcaseKit".toString()))
+
+    // This path also hardcodes the Swift target name (ShowcaseKit).
+    outputs.dir(layout.buildDirectory.dir("../.build/plugins/outputs/${layout.projectDirectory.asFile.getName().toLowerCase()}/ShowcaseKit/destination/JExtractSwiftPlugin/src/generated/java"))
+}
+
+// Create a build task for each ABI
+abis.each { abi, info ->
+    def task = tasks.register("buildSwift${abi.capitalize()}", Exec) {
+        group = "build"
+        description = "Builds the Swift code for the ${abi} ABI."
+
+        doFirst {
+            println("Building Swift for ${abi} (${info.triple})...")
+        }
+
+        outputs.dir(layout.projectDirectory.dir(".build/${info.triple}/debug"))
+
+        workingDir = layout.projectDirectory
+        executable(getSwiftlyPath())
+
+        args("run", "swift", "build", "+${swiftVersion}", "--swift-sdk", info.triple, "--build-system", "native")
+    }
+
+    buildSwiftAll.configure { dependsOn(task) }
+}
+
+def copyJniLibs = tasks.register("copyJniLibs", Copy) {
+    dependsOn(buildSwiftAll)
+
+    abis.each { abi, info ->
+        // Copy the built .so files
+        from(layout.projectDirectory.dir(".build/${info.triple}/debug")) {
+            include("*.so")
+            into(abi)
+        }
+
+        // Copy libc++_shared.so from NDK
+        from(file("${swiftSdkPath}/swift-android/ndk-sysroot/usr/lib/${info.ndkDirectory}/libc++_shared.so")) {
+            into(abi)
+        }
+
+        doFirst {
+            println("Copying Swift runtime libraries for ${abi}...")
+        }
+
+        // Copy the Swift runtime libraries
+        from(swiftRuntimeLibs.collect { libName ->
+            "${swiftSdkPath}/swift-android/swift-resources/usr/lib/${info.androidSdkLibDirectory}/android/lib${libName}.so"
+        }) {
+            into(abi)
+        }
+    }
+
+    into(generatedJniLibsDir)
+}
+
+// Add the java-swift generated Java sources
+android {
+    sourceSets {
+        main {
+            java {
+                srcDir(buildSwiftAll)
+            }
+
+            jniLibs {
+                srcDir(generatedJniLibsDir)
+            }
+        }
+    }
+}
+
+// Make sure we run our tasks before build
+preBuild.dependsOn(copyJniLibs)

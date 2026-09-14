@@ -48,6 +48,11 @@ project(":swift-java-weather-app-weather-lib").projectDir = file("swift-java-wea
 include(":swift-java-weather-app-weather-app")
 project(":swift-java-weather-app-weather-app").projectDir = file("swift-java-weather-app/weather-app")
 
+include(":swift-java-ui-showcase-showcase-lib")
+project(":swift-java-ui-showcase-showcase-lib").projectDir = file("swift-java-ui-showcase/showcase-lib")
+include(":swift-java-ui-showcase-showcase-app")
+project(":swift-java-ui-showcase-showcase-app").projectDir = file("swift-java-ui-showcase/showcase-app")
+
 // raw-jni examples
 include(":hello-swift-raw-jni")
 include(":hello-swift-raw-jni-callback")
