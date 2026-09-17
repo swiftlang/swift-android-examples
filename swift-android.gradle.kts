@@ -33,9 +33,12 @@ data class SwiftConfig(
     // useful for CI matrices that test multiple toolchains.
     var swiftVersion: String = System.getenv("SWIFT_VERSION")?.takeIf { it.isNotEmpty() } ?: "6.3",
     // Android Swift SDK artifactbundle suffix. Substituted into the bundle
-    // directory name as "swift-${androidSdkVersion}.artifactbundle". Can be
-    // overridden via the SWIFT_ANDROID_SDK_VERSION environment variable.
-    var androidSdkVersion: String = System.getenv("SWIFT_ANDROID_SDK_VERSION")?.takeIf { it.isNotEmpty() } ?: "${swiftVersion}-RELEASE_android"
+    // directory name as "swift-${androidSdkVersion}.artifactbundle". Installed
+    // bundle names vary across toolchains (release patch versions, snapshots,
+    // etc.), so leaving this null (the default) auto-detects the installed
+    // bundle instead of guessing a naming scheme. Set it explicitly, or via
+    // the SWIFT_ANDROID_SDK_VERSION environment variable, to pin an exact bundle.
+    var androidSdkVersion: String? = System.getenv("SWIFT_ANDROID_SDK_VERSION")?.takeIf { it.isNotEmpty() }
 )
 
 // Architecture definitions
@@ -128,9 +131,43 @@ fun getSwiftSDKPath(): String {
     throw GradleException("Swift SDK path not found. Please set swiftConfig.swiftSDKPath or install the Swift SDK for Android.")
 }
 
+// Resolve the installed Android Swift SDK artifactbundle suffix.
+//
+// Bundle directory names vary across toolchains and platforms (e.g. a
+// release requested as "6.3" is installed by `swift sdk install` as
+// "swift-6.3.3-RELEASE_android.artifactbundle"; snapshots use date-stamped
+// tags entirely), so rather than guessing a naming scheme, scan the Swift
+// SDK directory for what's actually installed:
+//   - an explicit override (swiftConfig.androidSdkVersion or the
+//     SWIFT_ANDROID_SDK_VERSION env var) always wins;
+//   - with exactly one "*android*.artifactbundle" present, use it, whatever
+//     it's named -- this covers the common case of a single SDK installed;
+//   - with several present, prefer one whose name starts with the
+//     configured swiftVersion, else fall back to the most recently
+//     installed one;
+//   - with none present, fall back to the historical guessed name so the
+//     existing "resources directory not found" diagnostic still fires.
+fun resolveAndroidSdkVersion(): String {
+    swiftConfig.androidSdkVersion?.let { return it }
+
+    val fallback = "${swiftConfig.swiftVersion}-RELEASE_android"
+    val bundles = file(getSwiftSDKPath()).listFiles { candidate ->
+        candidate.isDirectory && candidate.name.contains("android") && candidate.name.endsWith(".artifactbundle")
+    }?.toList() ?: emptyList()
+
+    val resolved = when (bundles.size) {
+        0 -> null
+        1 -> bundles.first()
+        else -> bundles.firstOrNull { it.name.startsWith("swift-${swiftConfig.swiftVersion}") }
+            ?: bundles.maxByOrNull { it.lastModified() }
+    }
+
+    return resolved?.name?.removePrefix("swift-")?.removeSuffix(".artifactbundle") ?: fallback
+}
+
 // Helper function to get Swift resources path
 fun getSwiftResourcesPath(arch: Arch): String {
-    val sdkVersion = swiftConfig.androidSdkVersion
+    val sdkVersion = resolveAndroidSdkVersion()
     return "${getSwiftSDKPath()}/swift-${sdkVersion}.artifactbundle/swift-android/swift-resources/usr/lib/swift_static-${arch.swiftArch}/"
 }
 
@@ -210,7 +247,7 @@ fun createCopySwiftLibrariesTask(
         dependsOn(swiftBuildTask)
 
         // Copy c++ shared runtime libraries
-        from("${getSwiftSDKPath()}/swift-${swiftConfig.androidSdkVersion}.artifactbundle/swift-android/ndk-sysroot/usr/lib/${arch.triple}") {
+        from("${getSwiftSDKPath()}/swift-${resolveAndroidSdkVersion()}.artifactbundle/swift-android/ndk-sysroot/usr/lib/${arch.triple}") {
             include("libc++_shared.so")
         }
 
