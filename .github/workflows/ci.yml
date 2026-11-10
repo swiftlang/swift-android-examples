@@ -20,9 +20,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        swift_version: ['6.3', 'nightly-6.3', 'nightly-main']
-        ndk_version: ['r27d', 'r29', 'r30']
-        os: ['ubuntu-latest']
+        swift_version: ['6.4', 'nightly-6.4.x', 'nightly-main']
+        ndk_version: ['r30']
+        os: ['ubuntu-26.04']
         configuration: ['Debug', 'Release']
     runs-on: ${{ matrix.os }}
     env:
@@ -42,7 +42,7 @@ jobs:
           set -euxo pipefail
           if [[ "${RUNNER_OS}" == "Linux" ]]; then
             sudo apt-get update
-            sudo apt-get -yq install curl jq gpg unzip libcurl4-openssl-dev
+            sudo apt-get -yq install curl jq gpg unzip libcurl4-openssl-dev binutils-gold
             ARCH="$(uname -m)"
             curl -L -O --retry 3 "https://download.swift.org/swiftly/linux/swiftly-${ARCH}.tar.gz"
             tar -xzf "swiftly-${ARCH}.tar.gz"
