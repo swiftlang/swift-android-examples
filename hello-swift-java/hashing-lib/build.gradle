@@ -113,10 +113,10 @@ def swiftRuntimeLibs = [
     "swiftSynchronization"
 ]
 
-// Swift toolchain version passed to swiftly (e.g. "6.3", "main-snapshot").
+// Swift toolchain version passed to swiftly (e.g. "6.4", "main-snapshot").
 // Can be overridden via the SWIFT_VERSION environment variable, which is
 // useful for CI matrices that test multiple toolchains.
-def swiftVersion = System.getenv("SWIFT_VERSION") ?: "6.3"
+def swiftVersion = System.getenv("SWIFT_VERSION") ?: "6.4"
 // Android Swift SDK artifactbundle suffix. Substituted into the bundle
 // directory name as "swift-${androidSdkVersion}.artifactbundle". Can be
 // overridden via the SWIFT_ANDROID_SDK_VERSION environment variable.

@@ -29,10 +29,10 @@ data class SwiftConfig(
     var releaseExtraBuildFlags: List<String> = emptyList(),
     var swiftlyPath: String? = null, // Optional custom swiftly path
     var swiftSDKPath: String? = null, // Optional custom Swift SDK path
-    // Swift toolchain version passed to swiftly (e.g. "6.3", "main-snapshot").
+    // Swift toolchain version passed to swiftly (e.g. "6.4", "main-snapshot").
     // Can be overridden via the SWIFT_VERSION environment variable, which is
     // useful for CI matrices that test multiple toolchains.
-    var swiftVersion: String = System.getenv("SWIFT_VERSION")?.takeIf { it.isNotEmpty() } ?: "6.3",
+    var swiftVersion: String = System.getenv("SWIFT_VERSION")?.takeIf { it.isNotEmpty() } ?: "6.4",
     // Android Swift SDK artifactbundle suffix. Substituted into the bundle
     // directory name as "swift-${androidSdkVersion}.artifactbundle". Can be
     // overridden via the SWIFT_ANDROID_SDK_VERSION environment variable.
@@ -134,12 +134,6 @@ fun getSwiftSDKPath(): String {
     throw GradleException("Swift SDK path not found. Please set swiftConfig.swiftSDKPath or install the Swift SDK for Android.")
 }
 
-// Helper function to get Swift resources path
-fun getSwiftResourcesPath(arch: Arch): String {
-    val sdkVersion = swiftConfig.androidSdkVersion
-    return "${getSwiftSDKPath()}/swift-${sdkVersion}.artifactbundle/swift-android/swift-resources/usr/lib/swift_static-${arch.swiftArch}/"
-}
-
 // Arguments shared by `swift build` and `swift build --show-bin-path`.
 fun swiftBuildArguments(arch: Arch, isDebug: Boolean): List<String> {
     val triple = "${arch.swiftTarget}${swiftConfig.apiLevel}"
@@ -151,9 +145,7 @@ fun swiftBuildArguments(arch: Arch, isDebug: Boolean): List<String> {
     return listOf(
         "run", "+${swiftConfig.swiftVersion}", "swift", "build",
     ) + sdkArgs + buildSystemArgs + listOf(
-        "-Xswiftc", "-static-stdlib",
-        "-Xswiftc", "-resource-dir",
-        "-Xswiftc", getSwiftResourcesPath(arch),
+        "--static-swift-stdlib",
     ) + configurationArgs + extraArgs
 }
 
@@ -186,7 +178,6 @@ fun createSwiftBuildTask(
         tasks.named<Exec>(taskName)
     } ?: tasks.register<Exec>(taskName) {
         val swiftlyPath = getSwiftlyPath()
-        val resourcesPath = getSwiftResourcesPath(arch)
         val arguments = swiftBuildArguments(arch, isDebug)
 
         workingDir("src/main/swift")
@@ -200,12 +191,6 @@ fun createSwiftBuildTask(
                     "swiftly not found at: $swiftlyPath\n" +
                             "Please install swiftly or configure the path in swiftConfig.swiftlyPath"
                 )
-            }
-
-            // Check if resources directory exists
-            if (!file(resourcesPath).exists()) {
-                println("Warning: Swift resources directory not found at: $resourcesPath")
-                println("You may need to install the Swift SDK for Android")
             }
 
             println("Building Swift for ${arch.variantName} ${if (isDebug) "Debug" else "Release"}")
