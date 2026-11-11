@@ -25,7 +25,7 @@ android {
 
     defaultConfig {
         applicationId = "org.example.nativeactivity"
-        minSdk = 29
+        minSdk = 24
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"

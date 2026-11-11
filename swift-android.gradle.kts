@@ -22,7 +22,7 @@ import java.util.concurrent.Callable
 
 // Configuration class for Swift builds
 data class SwiftConfig(
-    var apiLevel: Int = 28, // Default API level
+    var apiLevel: Int = 23, // Default API level
     var debugAbiFilters: Set<String> = setOf("arm64-v8a"),
     var debugExtraBuildFlags: List<String> = emptyList(),
     var releaseAbiFilters: Set<String> = setOf("arm64-v8a", "armeabi-v7a", "x86_64"),
@@ -291,6 +291,12 @@ fun handleVariant(variant: Any) {
 project.afterEvaluate {
     val androidExtension = project.extensions.findByName("android")
     if (androidExtension != null) {
+        // Build the Swift code for the app's minSdk
+        val defaultConfig = androidExtension::class.java.getMethod("getDefaultConfig").invoke(androidExtension)
+        (defaultConfig::class.java.getMethod("getMinSdk").invoke(defaultConfig) as? Int)?.let {
+            swiftConfig.apiLevel = it
+        }
+
         // Try applicationVariants first (for apps)
         try {
             val applicationVariantsMethod = androidExtension::class.java.getMethod("getApplicationVariants")

@@ -36,7 +36,7 @@ if [ ! -f "$ANDROID_TOOLCHAIN" ]; then
     exit 1
 fi
 
-ANDROID_API=28
+ANDROID_API=23
 
 ABIS=(
     "arm64-v8a:android-aarch64"
